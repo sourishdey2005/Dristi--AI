@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import AttendanceScanner from './components/AttendanceScanner';
 import StudentManagement from './components/StudentManagement';
 import AttendanceHistory from './components/AttendanceHistory';
+import SettingsPage from './components/Settings';
 import { AppView, Student, AttendanceRecord } from './types';
 import { getAllStudents, getAllAttendance } from './db';
 
@@ -37,6 +38,7 @@ const App: React.FC = () => {
     { id: 'dashboard', label: 'Analytics', icon: LayoutDashboard },
     { id: 'students', label: 'Students', icon: Users },
     { id: 'history', label: 'History', icon: History },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   if (isLoading) {
@@ -123,6 +125,7 @@ const App: React.FC = () => {
             {activeView === 'dashboard' && <Dashboard students={students} attendance={attendance} />}
             {activeView === 'students' && <StudentManagement students={students} onUpdate={fetchData} />}
             {activeView === 'history' && <AttendanceHistory attendance={attendance} />}
+            {activeView === 'settings' && <SettingsPage onReset={fetchData} />}
           </div>
         </div>
       </main>

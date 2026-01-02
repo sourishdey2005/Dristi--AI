@@ -77,3 +77,14 @@ export const getAllAttendance = async (): Promise<AttendanceRecord[]> => {
     request.onerror = () => reject('Error fetching attendance');
   });
 };
+
+export const resetAttendance = async (): Promise<void> => {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['attendance'], 'readwrite');
+    const store = transaction.objectStore('attendance');
+    const request = store.clear();
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject('Error resetting attendance');
+  });
+};
