@@ -54,9 +54,7 @@ const App: React.FC = () => {
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 glass transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           <div className="p-6 flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/40">
-              <ShieldCheck className="text-white" />
-            </div>
+            <img src="https://res.cloudinary.com/dodhvvewu/image/upload/v1767356980/dristi_Ai_ymdrkt.jpg" alt="Dristi AI Logo" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-900/40" />
             <div>
               <h1 className="text-xl font-bold tracking-tight">Drishti-AI</h1>
               <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Presence Secured</p>
@@ -104,9 +102,7 @@ const App: React.FC = () => {
       <main className="flex-1 md:ml-64 p-4 md:p-8">
         <header className="flex items-center justify-between mb-8 md:hidden">
           <div className="flex items-center space-x-3">
-             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <ShieldCheck className="text-white w-5 h-5" />
-            </div>
+             <img src="https://res.cloudinary.com/dodhvvewu/image/upload/v1767356980/dristi_Ai_ymdrkt.jpg" alt="Dristi AI Logo" className="w-8 h-8 rounded-lg" />
             <h1 className="text-lg font-bold">Drishti-AI</h1>
           </div>
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 glass rounded-lg">
