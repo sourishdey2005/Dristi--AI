@@ -1,8 +1,8 @@
 
-import { Student, AttendanceRecord } from './types';
+import { Member, AttendanceRecord } from './types';
 
 const DB_NAME = 'DrishtiAIDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented version to trigger schema update
 
 export const initDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
@@ -13,8 +13,12 @@ export const initDB = (): Promise<IDBDatabase> => {
 
     request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains('students')) {
-        db.createObjectStore('students', { keyPath: 'id' });
+      // Remove old 'students' store if it exists and create 'members'
+      if (db.objectStoreNames.contains('students')) {
+        db.deleteObjectStore('students');
+      }
+      if (!db.objectStoreNames.contains('members')) {
+        db.createObjectStore('members', { keyPath: 'id' });
       }
       if (!db.objectStoreNames.contains('attendance')) {
         db.createObjectStore('attendance', { keyPath: 'id' });
@@ -23,36 +27,36 @@ export const initDB = (): Promise<IDBDatabase> => {
   });
 };
 
-export const addStudent = async (student: Student): Promise<void> => {
+export const addMember = async (member: Member): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['students'], 'readwrite');
-    const store = transaction.objectStore('students');
-    const request = store.add(student);
+    const transaction = db.transaction(['members'], 'readwrite');
+    const store = transaction.objectStore('members');
+    const request = store.add(member);
     request.onsuccess = () => resolve();
-    request.onerror = () => reject('Error adding student');
+    request.onerror = () => reject('Error adding member');
   });
 };
 
-export const getAllStudents = async (): Promise<Student[]> => {
+export const getAllMembers = async (): Promise<Member[]> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['students'], 'readonly');
-    const store = transaction.objectStore('students');
+    const transaction = db.transaction(['members'], 'readonly');
+    const store = transaction.objectStore('members');
     const request = store.getAll();
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject('Error fetching students');
+    request.onerror = () => reject('Error fetching members');
   });
 };
 
-export const deleteStudent = async (id: string): Promise<void> => {
+export const deleteMember = async (id: string): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['students'], 'readwrite');
-    const store = transaction.objectStore('students');
+    const transaction = db.transaction(['members'], 'readwrite');
+    const store = transaction.objectStore('members');
     const request = store.delete(id);
     request.onsuccess = () => resolve();
-    request.onerror = () => reject('Error deleting student');
+    request.onerror = () => reject('Error deleting member');
   });
 };
 

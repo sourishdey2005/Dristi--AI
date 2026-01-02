@@ -1,8 +1,8 @@
 
-export interface Student {
+export interface Member {
   id: string;
   name: string;
-  rollNumber: string;
+  referenceId: string;
   department: string;
   photoBase64: string;
   createdAt: number;
@@ -10,11 +10,11 @@ export interface Student {
 
 export interface AttendanceRecord {
   id: string;
-  studentId: string;
-  studentName: string;
-  rollNumber: string;
+  memberId: string;
+  memberName: string;
+  referenceId: string;
   timestamp: number;
   status: 'Present' | 'Late';
 }
 
-export type AppView = 'dashboard' | 'scanner' | 'students' | 'history';
+export type AppView = 'dashboard' | 'scanner' | 'members' | 'history' | 'settings';

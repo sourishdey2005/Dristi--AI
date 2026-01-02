@@ -1,29 +1,29 @@
 
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Treemap } from 'recharts';
-import { Student, AttendanceRecord } from '../types';
+import { Member, AttendanceRecord } from '../types';
 import { Users, UserCheck, Calendar, Clock } from 'lucide-react';
 
 interface DashboardProps {
-  students: Student[];
+  members: Member[];
   attendance: AttendanceRecord[];
 }
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
 
-const Dashboard: React.FC<DashboardProps> = ({ students, attendance }) => {
+const Dashboard: React.FC<DashboardProps> = ({ members, attendance }) => {
   const stats = useMemo(() => {
     const today = new Date().setHours(0, 0, 0, 0);
     const todayRecords = attendance.filter(r => new Date(r.timestamp).setHours(0, 0, 0, 0) === today);
-    const uniquePresentToday = new Set(todayRecords.map(r => r.studentId)).size;
+    const uniquePresentToday = new Set(todayRecords.map(r => r.memberId)).size;
     
     return {
-      totalStudents: students.length,
+      totalMembers: members.length,
       presentToday: uniquePresentToday,
-      absentToday: Math.max(0, students.length - uniquePresentToday),
-      attendanceRate: students.length ? Math.round((uniquePresentToday / students.length) * 100) : 0
+      absentToday: Math.max(0, members.length - uniquePresentToday),
+      attendanceRate: members.length ? Math.round((uniquePresentToday / members.length) * 100) : 0
     };
-  }, [students, attendance]);
+  }, [members, attendance]);
 
   const chartData = useMemo(() => {
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -46,14 +46,13 @@ const Dashboard: React.FC<DashboardProps> = ({ students, attendance }) => {
   const treemapData = useMemo(() => {
     const deptMap: Record<string, number> = {};
     
-    // Create a lookup for student departments
-    const studentDeptMap = students.reduce((acc, s) => {
-      acc[s.id] = s.department;
+    const memberDeptMap = members.reduce((acc, m) => {
+      acc[m.id] = m.department;
       return acc;
     }, {} as Record<string, string>);
 
     attendance.forEach(record => {
-      const dept = studentDeptMap[record.studentId] || 'Unknown';
+      const dept = memberDeptMap[record.memberId] || 'Unknown';
       deptMap[dept] = (deptMap[dept] || 0) + 1;
     });
 
@@ -61,7 +60,7 @@ const Dashboard: React.FC<DashboardProps> = ({ students, attendance }) => {
       name,
       value,
     }));
-  }, [students, attendance]);
+  }, [members, attendance]);
 
   const CustomizedContent = (props: any) => {
     const { root, depth, x, y, width, height, index, name } = props;
@@ -99,7 +98,7 @@ const Dashboard: React.FC<DashboardProps> = ({ students, attendance }) => {
   return (
     <div className="space-y-6 pb-12">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={<Users className="text-blue-400" />} label="Total Students" value={stats.totalStudents} />
+        <StatCard icon={<Users className="text-blue-400" />} label="Total Members" value={stats.totalMembers} />
         <StatCard icon={<UserCheck className="text-emerald-400" />} label="Present Today" value={stats.presentToday} />
         <StatCard icon={<Calendar className="text-purple-400" />} label="Absentees" value={stats.absentToday} />
         <StatCard icon={<Clock className="text-orange-400" />} label="Attendance Rate" value={`${stats.attendanceRate}%`} />

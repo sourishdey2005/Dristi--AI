@@ -11,17 +11,28 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({ attendance }) => 
   const [filterDate, setFilterDate] = useState('');
 
   const exportCSV = () => {
-    const headers = ['ID', 'Student Name', 'Roll Number', 'Timestamp', 'Date', 'Status'];
-    const rows = attendance.map(r => [
-      r.id,
-      r.studentName,
-      r.rollNumber,
-      new Date(r.timestamp).toLocaleTimeString(),
-      new Date(r.timestamp).toLocaleDateString(),
-      r.status
-    ]);
+    const headers = ['ID', 'Member Name', 'Reference ID', 'Timestamp', 'Status'];
 
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const formatCell = (cellData) => {
+      const stringData = String(cellData ?? '');
+      if (stringData.includes(',') || stringData.includes('"') || stringData.includes('\n')) {
+        return `"${stringData.replace(/"/g, '""')}"`;
+      }
+      return stringData;
+    };
+
+    const rows = attendance.map(r => {
+      const timestamp = new Date(r.timestamp).toLocaleString();
+      return [
+        r.id,
+        r.memberName,
+        r.referenceId,
+        timestamp,
+        r.status
+      ].map(formatCell).join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -69,8 +80,8 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({ attendance }) => 
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-white/10 bg-white/5">
-                <th className="px-6 py-4 font-semibold text-slate-300">Student Name</th>
-                <th className="px-6 py-4 font-semibold text-slate-300">Roll Number</th>
+                <th className="px-6 py-4 font-semibold text-slate-300">Member Name</th>
+                <th className="px-6 py-4 font-semibold text-slate-300">Reference ID</th>
                 <th className="px-6 py-4 font-semibold text-slate-300">Date</th>
                 <th className="px-6 py-4 font-semibold text-slate-300">Time</th>
                 <th className="px-6 py-4 font-semibold text-slate-300">Status</th>
@@ -79,8 +90,8 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({ attendance }) => 
             <tbody className="divide-y divide-white/5">
               {filteredData.length > 0 ? filteredData.map((record) => (
                 <tr key={record.id} className="hover:bg-white/5 transition-colors">
-                  <td className="px-6 py-4 font-medium">{record.studentName}</td>
-                  <td className="px-6 py-4 text-slate-400">{record.rollNumber}</td>
+                  <td className="px-6 py-4 font-medium">{record.memberName}</td>
+                  <td className="px-6 py-4 text-slate-400">{record.referenceId}</td>
                   <td className="px-6 py-4 text-slate-400">{new Date(record.timestamp).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-slate-400">{new Date(record.timestamp).toLocaleTimeString()}</td>
                   <td className="px-6 py-4">

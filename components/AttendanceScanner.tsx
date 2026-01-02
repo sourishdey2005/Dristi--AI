@@ -1,16 +1,16 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Camera, RefreshCw, CheckCircle, AlertCircle, Loader2, Zap, ZapOff } from 'lucide-react';
-import { Student, AttendanceRecord } from '../types';
-import { recognizeStudent } from '../services/geminiService';
+import { Member, AttendanceRecord } from '../types';
+import { recognizeMember } from '../services/geminiService';
 import { recordAttendance } from '../db';
 
 interface AttendanceScannerProps {
-  students: Student[];
+  members: Member[];
   onAttendanceMarked: () => void;
 }
 
-const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ students, onAttendanceMarked }) => {
+const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttendanceMarked }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -55,7 +55,7 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ students, onAtten
   };
 
   const handleScan = useCallback(async () => {
-    if (isScanning || students.length === 0) return;
+    if (isScanning || members.length === 0) return;
     
     setIsScanning(true);
     setStatus({ type: 'scanning', message: 'Drishti AI is detecting...' });
@@ -68,25 +68,25 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ students, onAtten
     }
 
     try {
-      const studentId = await recognizeStudent(frame, students);
+      const memberId = await recognizeMember(frame, members);
       
-      if (studentId) {
-        const student = students.find(s => s.id === studentId);
-        if (student) {
-          if (lastMarkedId === studentId) {
-             setStatus({ type: 'success', message: `Confirmed: ${student.name} is present` });
+      if (memberId) {
+        const member = members.find(m => m.id === memberId);
+        if (member) {
+          if (lastMarkedId === memberId) {
+             setStatus({ type: 'success', message: `Confirmed: ${member.name} is present` });
           } else {
             const record: AttendanceRecord = {
               id: crypto.randomUUID(),
-              studentId: student.id,
-              studentName: student.name,
-              rollNumber: student.rollNumber,
+              memberId: member.id,
+              memberName: member.name,
+              referenceId: member.referenceId,
               timestamp: Date.now(),
               status: 'Present'
             };
             await recordAttendance(record);
-            setLastMarkedId(studentId);
-            setStatus({ type: 'success', message: `Identity Verified: ${student.name}` });
+            setLastMarkedId(memberId);
+            setStatus({ type: 'success', message: `Identity Verified: ${member.name}` });
             onAttendanceMarked();
           }
         }
@@ -102,7 +102,7 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ students, onAtten
         setStatus(prev => (prev.type === 'scanning' ? prev : { type: 'idle', message: autoScan ? 'Monitoring...' : 'Ready to scan' }));
       }, 3000);
     }
-  }, [isScanning, students, lastMarkedId, onAttendanceMarked, autoScan]);
+  }, [isScanning, members, lastMarkedId, onAttendanceMarked, autoScan]);
 
   // Auto-scan polling logic
   useEffect(() => {
@@ -188,7 +188,7 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ students, onAtten
         {!autoScan ? (
           <button
             onClick={handleScan}
-            disabled={isScanning || students.length === 0}
+            disabled={isScanning || members.length === 0}
             className="px-12 py-5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl font-bold shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-4 border border-white/10"
           >
             {isScanning ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
@@ -207,10 +207,10 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ students, onAtten
           </div>
         )}
 
-        {students.length === 0 && (
+        {members.length === 0 && (
           <div className="flex items-center space-x-2 text-orange-400 bg-orange-400/10 px-5 py-3 rounded-xl border border-orange-400/20">
             <AlertCircle className="w-4 h-4" />
-            <p className="font-medium text-sm">No students registered yet.</p>
+            <p className="font-medium text-sm">No members registered yet.</p>
           </div>
         )}
       </div>

@@ -1,19 +1,19 @@
 
 import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Camera, X, UserPlus, Search, RefreshCw, AlertCircle } from 'lucide-react';
-import { Student } from '../types';
-import { addStudent, deleteStudent } from '../db';
+import { Member } from '../types';
+import { addMember, deleteMember } from '../db';
 
-interface StudentManagementProps {
-  students: Student[];
+interface MemberManagementProps {
+  members: Member[];
   onUpdate: () => void;
 }
 
-const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdate }) => {
+const MemberManagement: React.FC<MemberManagementProps> = ({ members, onUpdate }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', rollNumber: '', department: '' });
+  const [formData, setFormData] = useState({ name: '', referenceId: '', department: '' });
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -25,7 +25,7 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
       console.error("Camera error", err);
-      setFormError("Camera access denied. Please enable permissions to capture student photo.");
+      setFormError("Camera access denied. Please enable permissions to capture member photo.");
     }
   };
 
@@ -48,11 +48,11 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
     e.preventDefault();
     
     if (!capturedPhoto) {
-      setFormError('Identity verification required: Please capture a student photo before proceeding.');
+      setFormError('Identity verification required: Please capture a member photo before proceeding.');
       return;
     }
     
-    const newStudent: Student = {
+    const newMember: Member = {
       id: crypto.randomUUID(),
       ...formData,
       photoBase64: capturedPhoto,
@@ -60,11 +60,11 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
     };
 
     try {
-      await addStudent(newStudent);
+      await addMember(newMember);
       onUpdate();
       closeModal();
     } catch (err) {
-      setFormError('Failed to save student record. Please try again.');
+      setFormError('Failed to save member record. Please try again.');
     }
   };
 
@@ -72,7 +72,7 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
     setIsAdding(false);
     setCapturedPhoto(null);
     setFormError(null);
-    setFormData({ name: '', rollNumber: '', department: '' });
+    setFormData({ name: '', referenceId: '', department: '' });
     // Ensure camera is stopped if modal is closed
     if (videoRef.current?.srcObject) {
       (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
@@ -80,15 +80,15 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this student?')) {
-      await deleteStudent(id);
+    if (confirm('Are you sure you want to delete this member?')) {
+      await deleteMember(id);
       onUpdate();
     }
   };
 
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.rollNumber.includes(searchTerm)
+  const filteredMembers = members.filter(m => 
+    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.referenceId.includes(searchTerm)
   );
 
   return (
@@ -98,7 +98,7 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Search students..."
+            placeholder="Search members..."
             className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -109,18 +109,18 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
           className="flex items-center space-x-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl font-semibold transition-all shadow-lg"
         >
           <UserPlus className="w-5 h-5" />
-          <span>Add Student</span>
+          <span>Add Member</span>
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredStudents.map((student) => (
-          <div key={student.id} className="glass-card rounded-2xl overflow-hidden group">
+        {filteredMembers.map((member) => (
+          <div key={member.id} className="glass-card rounded-2xl overflow-hidden group">
             <div className="aspect-square bg-slate-800 relative">
-              <img src={student.photoBase64} alt={student.name} className="w-full h-full object-cover" />
+              <img src={member.photoBase64} alt={member.name} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button 
-                  onClick={() => handleDelete(student.id)}
+                  onClick={() => handleDelete(member.id)}
                   className="p-3 bg-red-500 rounded-full hover:scale-110 transition-transform"
                 >
                   <Trash2 className="w-5 h-5 text-white" />
@@ -128,9 +128,9 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
               </div>
             </div>
             <div className="p-4">
-              <h4 className="font-bold text-lg truncate">{student.name}</h4>
-              <p className="text-sm text-slate-400">Roll: {student.rollNumber}</p>
-              <p className="text-xs text-blue-400 mt-1 uppercase font-semibold">{student.department}</p>
+              <h4 className="font-bold text-lg truncate">{member.name}</h4>
+              <p className="text-sm text-slate-400">ID: {member.referenceId}</p>
+              <p className="text-xs text-blue-400 mt-1 uppercase font-semibold">{member.department}</p>
             </div>
           </div>
         ))}
@@ -140,7 +140,7 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="glass-card w-full max-w-xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-white/10 flex justify-between items-center">
-              <h3 className="text-xl font-bold">Register New Student</h3>
+              <h3 className="text-xl font-bold">Register New Member</h3>
               <button onClick={closeModal} className="p-2 hover:bg-white/10 rounded-full">
                 <X className="w-6 h-6" />
               </button>
@@ -160,8 +160,8 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
                   <input required className="w-full p-2 bg-white/5 border border-white/10 rounded-lg outline-none focus:border-blue-500 transition-colors" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-slate-400">Roll Number</label>
-                  <input required className="w-full p-2 bg-white/5 border border-white/10 rounded-lg outline-none focus:border-blue-500 transition-colors" value={formData.rollNumber} onChange={e => setFormData({...formData, rollNumber: e.target.value})} />
+                  <label className="text-sm text-slate-400">Reference ID</label>
+                  <input required className="w-full p-2 bg-white/5 border border-white/10 rounded-lg outline-none focus:border-blue-500 transition-colors" value={formData.referenceId} onChange={e => setFormData({...formData, referenceId: e.target.value})} />
                 </div>
                 <div className="col-span-2 space-y-2">
                   <label className="text-sm text-slate-400">Department</label>
@@ -202,4 +202,4 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ students, onUpdat
   );
 };
 
-export default StudentManagement;
+export default MemberManagement;

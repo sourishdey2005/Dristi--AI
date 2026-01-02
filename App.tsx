@@ -3,24 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Camera, Users, History, Settings, ShieldCheck, Menu, X, Loader2 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import AttendanceScanner from './components/AttendanceScanner';
-import StudentManagement from './components/StudentManagement';
+import MemberManagement from './components/MemberManagement';
 import AttendanceHistory from './components/AttendanceHistory';
 import SettingsPage from './components/Settings';
-import { AppView, Student, AttendanceRecord } from './types';
-import { getAllStudents, getAllAttendance } from './db';
+import { AppView, Member, AttendanceRecord } from './types';
+import { getAllMembers, getAllAttendance } from './db';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<AppView>('scanner');
-  const [students, setStudents] = useState<Student[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const s = await getAllStudents();
+      const m = await getAllMembers();
       const a = await getAllAttendance();
-      setStudents(s);
+      setMembers(m);
       setAttendance(a);
     } catch (err) {
       console.error("DB Fetch Error", err);
@@ -36,7 +36,7 @@ const App: React.FC = () => {
   const navItems = [
     { id: 'scanner', label: 'Face Scan', icon: Camera },
     { id: 'dashboard', label: 'Analytics', icon: LayoutDashboard },
-    { id: 'students', label: 'Students', icon: Users },
+    { id: 'members', label: 'Members', icon: Users },
     { id: 'history', label: 'History', icon: History },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -117,13 +117,13 @@ const App: React.FC = () => {
              <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
                {navItems.find(i => i.id === activeView)?.label}
              </h2>
-             <p className="text-slate-400 mt-1">Manage your institution's presence with intelligence.</p>
+             <p className="text-slate-400 mt-1">Manage your organization's presence with intelligence.</p>
           </div>
 
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {activeView === 'scanner' && <AttendanceScanner students={students} onAttendanceMarked={fetchData} />}
-            {activeView === 'dashboard' && <Dashboard students={students} attendance={attendance} />}
-            {activeView === 'students' && <StudentManagement students={students} onUpdate={fetchData} />}
+            {activeView === 'scanner' && <AttendanceScanner members={members} onAttendanceMarked={fetchData} />}
+            {activeView === 'dashboard' && <Dashboard members={members} attendance={attendance} />}
+            {activeView === 'members' && <MemberManagement members={members} onUpdate={fetchData} />}
             {activeView === 'history' && <AttendanceHistory attendance={attendance} />}
             {activeView === 'settings' && <SettingsPage onReset={fetchData} />}
           </div>
