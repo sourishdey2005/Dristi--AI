@@ -20,7 +20,7 @@ const Dashboard: React.FC<DashboardProps> = ({ students, attendance }) => {
     return {
       totalStudents: students.length,
       presentToday: uniquePresentToday,
-      absentToday: students.length - uniquePresentToday,
+      absentToday: Math.max(0, students.length - uniquePresentToday),
       attendanceRate: students.length ? Math.round((uniquePresentToday / students.length) * 100) : 0
     };
   }, [students, attendance]);
