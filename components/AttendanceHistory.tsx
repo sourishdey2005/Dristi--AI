@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Download, Calendar, Filter, FileSpreadsheet } from 'lucide-react';
+import { Calendar, FileSpreadsheet } from 'lucide-react';
 import { AttendanceRecord } from '../types';
 
 interface AttendanceHistoryProps {
@@ -95,7 +95,7 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({ attendance }) => 
                   <td className="px-6 py-4 text-slate-400">{new Date(record.timestamp).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-slate-400">{new Date(record.timestamp).toLocaleTimeString()}</td>
                   <td className="px-6 py-4">
-                    <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-bold border border-emerald-500/20">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${record.status === 'Present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
                       {record.status}
                     </span>
                   </td>

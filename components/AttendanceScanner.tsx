@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Camera, RefreshCw, CheckCircle, AlertCircle, Loader2, Zap, ZapOff } from 'lucide-react';
+import { Camera, RefreshCw, CheckCircle, AlertCircle, Loader2, Zap, LogIn, LogOut } from 'lucide-react';
 import { Member, AttendanceRecord } from '../types';
 import { recognizeMember } from '../services/geminiService';
 import { recordAttendance } from '../db';
@@ -14,6 +14,7 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanMode, setScanMode] = useState<'Present' | 'Out'>('Present');
   const [autoScan, setAutoScan] = useState(false);
   const [status, setStatus] = useState<{ type: 'idle' | 'scanning' | 'success' | 'error'; message: string }>({
     type: 'idle',
@@ -105,8 +106,9 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
       if (memberId) {
         const member = members.find(m => m.id === memberId);
         if (member) {
-          if (lastMarkedId === memberId) {
-             setStatus({ type: 'success', message: `Confirmed: ${member.name} is present` });
+          const statusMessage = scanMode === 'Present' ? `Identity Verified: ${member.name}` : `Goodbye: ${member.name}`;
+          if (lastMarkedId === `${memberId}-${scanMode}`) {
+             setStatus({ type: 'success', message: `Confirmed: ${member.name} is ${scanMode.toLowerCase()}` });
           } else {
             const record: AttendanceRecord = {
               id: crypto.randomUUID(),
@@ -114,11 +116,11 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
               memberName: member.name,
               referenceId: member.referenceId,
               timestamp: Date.now(),
-              status: 'Present'
+              status: scanMode
             };
             await recordAttendance(record);
-            setLastMarkedId(memberId);
-            setStatus({ type: 'success', message: `Identity Verified: ${member.name}` });
+            setLastMarkedId(`${memberId}-${scanMode}`);
+            setStatus({ type: 'success', message: statusMessage });
             onAttendanceMarked();
             playBeep('success');
           }
@@ -136,9 +138,8 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
         setStatus(prev => (prev.type === 'scanning' ? prev : { type: 'idle', message: autoScan ? 'Monitoring...' : 'Ready to scan' }));
       }, 3000);
     }
-  }, [isScanning, members, lastMarkedId, onAttendanceMarked, autoScan]);
+  }, [isScanning, members, lastMarkedId, onAttendanceMarked, autoScan, scanMode]);
 
-  // Auto-scan polling logic
   useEffect(() => {
     let timer: number;
     if (autoScan && !isScanning && status.type !== 'scanning' && status.type !== 'success') {
@@ -150,23 +151,41 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
   }, [autoScan, isScanning, status.type, handleScan]);
 
   return (
-    <div className="flex flex-col items-center space-y-8">
-      <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 glass shadow-inner">
+    <div className="flex flex-col items-center space-y-6">
+      {/* Mode Toggles */}
+      <div className="grid grid-cols-2 gap-2 bg-white/5 p-1 rounded-2xl border border-white/10 glass shadow-inner w-full max-w-sm">
         <button
           onClick={() => setAutoScan(false)}
-          className={`flex items-center space-x-2 px-6 py-2 rounded-xl transition-all duration-300 ${!autoScan ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${!autoScan ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
         >
           <Camera className="w-4 h-4" />
-          <span className="text-sm font-semibold">Manual Mode</span>
+          <span className="text-sm font-semibold">Manual</span>
         </button>
         <button
           onClick={() => setAutoScan(true)}
-          className={`flex items-center space-x-2 px-6 py-2 rounded-xl transition-all duration-300 ${autoScan ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${autoScan ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
         >
           <Zap className={`w-4 h-4 ${autoScan ? 'animate-pulse' : ''}`} />
           <span className="text-sm font-semibold">Auto-Scan</span>
         </button>
       </div>
+
+      {!autoScan && (
+        <div className="grid grid-cols-2 gap-2 bg-white/5 p-1 rounded-2xl border border-white/10 glass shadow-inner w-full max-w-sm">
+          <button
+            onClick={() => setScanMode('Present')}
+            className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${scanMode === 'Present' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+            <LogIn className="w-4 h-4" />
+            <span className="text-sm font-semibold">IN</span>
+          </button>
+          <button
+            onClick={() => setScanMode('Out')}
+            className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${scanMode === 'Out' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm font-semibold">OUT</span>
+          </button>
+        </div>
+      )}
 
       <div className="relative w-full max-w-2xl aspect-video rounded-3xl overflow-hidden glass shadow-[0_0_50px_rgba(37,99,235,0.15)] group">
         <video 
@@ -194,13 +213,13 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
         </div>
 
         <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl flex items-center space-x-4 shadow-2xl transition-all duration-500 backdrop-blur-2xl border ${
-          status.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-100' : 
+          status.type === 'success' ? (scanMode === 'Present' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-100' : 'bg-rose-500/20 border-rose-500/30 text-rose-100') : 
           status.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-100' : 
           'bg-slate-900/60 border-white/10 text-white'
         }`}>
           <div className="p-2 bg-white/10 rounded-lg">
             {status.type === 'scanning' && <Loader2 className="w-5 h-5 animate-spin text-blue-400" />}
-            {status.type === 'success' && <CheckCircle className="w-5 h-5 text-emerald-400" />}
+            {status.type === 'success' && <CheckCircle className="w-5 h-5" />}
             {status.type === 'error' && <AlertCircle className="w-5 h-5 text-red-400" />}
             {status.type === 'idle' && (autoScan ? <Zap className="w-5 h-5 text-indigo-400 animate-pulse" /> : <Camera className="w-5 h-5 text-blue-400" />)}
           </div>
@@ -219,7 +238,7 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
             className="px-12 py-5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl font-bold shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-4 border border-white/10"
           >
             {isScanning ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
-            <span className="text-lg">{isScanning ? 'Authenticating...' : 'Mark Attendance'}</span>
+            <span className="text-lg">{isScanning ? 'Authenticating...' : `Mark ${scanMode}` }</span>
           </button>
         ) : (
           <div className="flex flex-col items-center space-y-2">

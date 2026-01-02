@@ -14,7 +14,7 @@ export interface AttendanceRecord {
   memberName: string;
   referenceId: string;
   timestamp: number;
-  status: 'Present' | 'Late';
+  status: 'Present' | 'Out';
 }
 
 export type AppView = 'dashboard' | 'scanner' | 'members' | 'history' | 'settings';
