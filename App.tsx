@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Camera, Users, History, Settings, ShieldCheck, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Camera, Users, History, Settings, ShieldCheck, Menu, X, Loader2 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import AttendanceScanner from './components/AttendanceScanner';
 import StudentManagement from './components/StudentManagement';
@@ -13,6 +13,7 @@ const App: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
     try {
@@ -22,6 +23,8 @@ const App: React.FC = () => {
       setAttendance(a);
     } catch (err) {
       console.error("DB Fetch Error", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -35,6 +38,15 @@ const App: React.FC = () => {
     { id: 'students', label: 'Students', icon: Users },
     { id: 'history', label: 'History', icon: History },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-blue-400">
+        <Loader2 className="w-12 h-12 animate-spin mb-4" />
+        <div className="text-xl font-bold tracking-widest uppercase">Loading System</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden">
