@@ -20,7 +20,38 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
     message: 'Ready to scan'
   });
   const [lastMarkedId, setLastMarkedId] = useState<string | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
+  const playBeep = (type: 'success' | 'error') => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const audioContext = audioContextRef.current;
+    if (!audioContext) return;
+
+    const play = (freq: number, duration: number, delay: number) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + delay);
+      gainNode.gain.setValueAtTime(0.5, audioContext.currentTime + delay);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + delay + duration);
+
+      oscillator.start(audioContext.currentTime + delay);
+      oscillator.stop(audioContext.currentTime + delay + duration);
+    };
+
+    if (type === 'success') {
+      play(600, 0.1, 0);
+    } else {
+      play(300, 0.1, 0);
+      play(300, 0.1, 0.15);
+    }
+  };
+  
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
@@ -64,6 +95,7 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
     if (!frame) {
       setIsScanning(false);
       setStatus({ type: 'error', message: 'Failed to capture frame' });
+      playBeep('error');
       return;
     }
 
@@ -88,16 +120,18 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
             setLastMarkedId(memberId);
             setStatus({ type: 'success', message: `Identity Verified: ${member.name}` });
             onAttendanceMarked();
+            playBeep('success');
           }
         }
       } else {
         setStatus({ type: 'error', message: 'Face not recognized. Adjust lighting.' });
+        playBeep('error');
       }
     } catch (error) {
       setStatus({ type: 'error', message: 'AI Connection Error' });
+      playBeep('error');
     } finally {
       setIsScanning(false);
-      // Keep status for a moment then reset if not in auto-scan
       setTimeout(() => {
         setStatus(prev => (prev.type === 'scanning' ? prev : { type: 'idle', message: autoScan ? 'Monitoring...' : 'Ready to scan' }));
       }, 3000);
@@ -110,14 +144,13 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
     if (autoScan && !isScanning && status.type !== 'scanning' && status.type !== 'success') {
       timer = window.setInterval(() => {
         handleScan();
-      }, 4000); // Poll every 4 seconds to avoid hitting rate limits too fast
+      }, 4000); 
     }
     return () => clearInterval(timer);
   }, [autoScan, isScanning, status.type, handleScan]);
 
   return (
     <div className="flex flex-col items-center space-y-8">
-      {/* Mode Toggle */}
       <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 glass shadow-inner">
         <button
           onClick={() => setAutoScan(false)}
@@ -145,27 +178,21 @@ const AttendanceScanner: React.FC<AttendanceScannerProps> = ({ members, onAttend
         />
         <canvas ref={canvasRef} className="hidden" />
         
-        {/* Scanning Overlays */}
         <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-            {/* Pulsing monitoring rings */}
             {autoScan && !isScanning && (
               <div className="absolute w-72 h-72 border border-blue-500/20 rounded-full animate-ping duration-[3000ms]" />
             )}
             
-            {/* Main Radar */}
             <div className={`w-64 h-64 border-2 border-blue-500/30 rounded-full border-dashed ${isScanning ? 'animate-[spin_4s_linear_infinite]' : 'animate-[spin_12s_linear_infinite]'}`} />
             
-            {/* Viewfinder Corners */}
             <div className={`absolute w-48 h-48 border-t-4 border-l-4 rounded-tl-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ${isScanning ? 'border-blue-400 w-56 h-56' : 'border-blue-400/40'}`} />
             <div className={`absolute w-48 h-48 border-b-4 border-r-4 rounded-br-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ${isScanning ? 'border-blue-400 w-56 h-56' : 'border-blue-400/40'}`} />
             
-            {/* Scanning Line */}
             {isScanning && (
               <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_15px_#60a5fa] animate-[bounce_2s_infinite] opacity-50" />
             )}
         </div>
 
-        {/* Status Toast */}
         <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl flex items-center space-x-4 shadow-2xl transition-all duration-500 backdrop-blur-2xl border ${
           status.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-100' : 
           status.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-100' : 
