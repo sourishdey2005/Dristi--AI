@@ -1,0 +1,7 @@
+{
+  "name": "Drishti-AI",
+  "description": "A cutting-edge, Indian-themed AI face recognition attendance system using Gemini for high-accuracy student verification and IndexedDB for secure local storage.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
